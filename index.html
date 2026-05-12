@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#314659">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Meter Recti">
+  <meta name="description" content="Water meter calibration PWA">
+  <title>Meter Recti</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.svg">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main id="app" class="app-shell">
+    <section id="splashView" class="view splash-view" aria-label="欢迎页">
+      <div class="brand-mark" aria-hidden="true">
+        <div class="gauge">
+          <span class="gauge-needle"></span>
+          <span class="gauge-hub"></span>
+          <span class="gauge-tick tick-left"></span>
+          <span class="gauge-tick tick-mid"></span>
+          <span class="gauge-tick tick-right"></span>
+        </div>
+        <div class="water-drop"></div>
+      </div>
+      <div class="splash-copy">
+        <p class="eyebrow">Meter Calibration</p>
+        <h1>Welcome</h1>
+        <p class="status-line" id="splashStatus">正在检查 MQTT 设置...</p>
+      </div>
+    </section>
+
+    <section id="settingsView" class="view settings-view hidden" aria-label="MQTT 设置页">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Connection</p>
+          <h2>MQTT 设置</h2>
+        </div>
+        <div class="header-actions">
+          <button id="goCalibrationButton" class="icon-text-button" type="button">校准页</button>
+          <span id="connectionBadge" class="badge">未连接</span>
+        </div>
+      </header>
+
+      <form id="mqttForm" class="settings-form" autocomplete="on">
+        <label>
+          <span>WS 地址</span>
+          <input id="wsEndpoint" name="wsEndpoint" type="text" inputmode="url" placeholder="47.112.12.175:8083/mqtt" required>
+        </label>
+
+        <label>
+          <span>端口（可选）</span>
+          <input id="port" name="port" type="number" inputmode="numeric" min="1" max="65535" placeholder="地址未含端口时填写">
+        </label>
+
+        <label>
+          <span>账号</span>
+          <input id="username" name="username" type="text" placeholder="MQTT 用户名">
+        </label>
+
+        <label>
+          <span>密码</span>
+          <input id="password" name="password" type="password" placeholder="MQTT 密码">
+        </label>
+
+        <label>
+          <span>订阅主题</span>
+          <input id="subscribeTopic" name="subscribeTopic" type="text" placeholder="meter/+/reply" required>
+        </label>
+
+        <label>
+          <span>发布主题</span>
+          <input id="publishTopic" name="publishTopic" type="text" placeholder="meter/001/cmd" required>
+        </label>
+
+        <div class="form-actions">
+          <button type="submit">保存并连接</button>
+          <button id="disconnectButton" class="secondary-button" type="button">断开连接</button>
+        </div>
+      </form>
+
+      <p id="formMessage" class="form-message" role="status"></p>
+    </section>
+
+    <section id="calibrationView" class="view calibration-view hidden" aria-label="扫码校准页">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Calibration</p>
+          <h2>扫码校准</h2>
+        </div>
+        <div class="header-actions">
+          <button id="goSettingsButton" class="icon-text-button" type="button">MQTT</button>
+          <button id="goHistoryButton" class="icon-text-button" type="button">历史</button>
+          <span id="calibrationBadge" class="badge">待机</span>
+        </div>
+      </header>
+
+      <section class="scanner-panel">
+        <video id="scannerVideo" class="scanner-video hidden" playsinline muted></video>
+        <div id="scannerPlaceholder" class="scanner-placeholder">
+          <div class="scanner-frame" aria-hidden="true"></div>
+          <p>扫码区域</p>
+        </div>
+      </section>
+
+      <form id="calibrationForm" class="calibration-form">
+        <label>
+          <span>序列号</span>
+          <input id="serialNumber" name="serialNumber" type="text" inputmode="numeric" placeholder="扫描或手动输入" required>
+        </label>
+
+        <label>
+          <span>表盘读数</span>
+          <input id="meterReading" name="meterReading" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0 - 999999999" required>
+        </label>
+
+        <div class="form-actions">
+          <button id="scanButton" class="secondary-button" type="button">开始扫码</button>
+          <button type="submit">校准</button>
+        </div>
+      </form>
+
+      <p id="calibrationMessage" class="form-message" role="status"></p>
+    </section>
+
+    <section id="historyView" class="view history-view hidden" aria-label="历史记录页">
+      <header class="page-header">
+        <div>
+          <p class="eyebrow">Records</p>
+          <h2>历史记录</h2>
+        </div>
+        <div class="header-actions">
+          <button id="backCalibrationButton" class="icon-text-button" type="button">校准页</button>
+        </div>
+      </header>
+
+      <section class="history-panel">
+        <div class="history-table-head">
+          <span>SN</span>
+          <span>METERSUM</span>
+          <span>校准时间</span>
+        </div>
+        <div id="historyList" class="history-list"></div>
+      </section>
+
+      <p id="historyMessage" class="form-message" role="status"></p>
+    </section>
+  </main>
+
+  <script src="app.js" defer></script>
+</body>
+</html>
