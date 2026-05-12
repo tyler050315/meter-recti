@@ -138,6 +138,11 @@ function setBadge(state, text) {
   calibrationBadge.textContent = text;
 }
 
+function setConnectionMessage(text) {
+  formMessage.textContent = text;
+  calibrationMessage.textContent = text;
+}
+
 function normalizeWsEndpoint(endpoint) {
   const trimmedEndpoint = endpoint.trim().replace(/\/+$/, "");
   if (/^wss?:\/\//i.test(trimmedEndpoint)) {
@@ -228,20 +233,35 @@ function connectMqtt(settings) {
     clean: true,
   };
 
+  const connectionUrl = buildWsUrl(settings);
   setBadge("", "连接中");
-  mqttClient = window.mqtt.connect(buildWsUrl(settings), options);
+  setConnectionMessage(`正在连接 MQTT：${connectionUrl}`);
+  mqttClient = window.mqtt.connect(connectionUrl, options);
 
   mqttClient.on("connect", () => {
     setBadge("connected", "已连接");
-    formMessage.textContent = "MQTT 已连接，设置已保存。";
-    calibrationMessage.textContent = "MQTT 已连接，可以开始扫码校准。";
+    setConnectionMessage(`MQTT 已连接：${connectionUrl}`);
     showCalibration();
   });
 
   mqttClient.on("message", handleMqttMessage);
-  mqttClient.on("reconnect", () => setBadge("", "重连中"));
-  mqttClient.on("offline", () => setBadge("error", "离线"));
-  mqttClient.on("error", () => setBadge("error", "连接错误"));
+  mqttClient.on("reconnect", () => {
+    setBadge("", "重连中");
+    setConnectionMessage(`MQTT 正在重连：${connectionUrl}`);
+  });
+  mqttClient.on("offline", () => {
+    setBadge("error", "离线");
+    setConnectionMessage(`MQTT 已离线，请检查网络或服务器：${connectionUrl}`);
+  });
+  mqttClient.on("close", () => {
+    if (!mqttClient) return;
+    setBadge("error", "已关闭");
+    setConnectionMessage(`MQTT 连接已关闭：${connectionUrl}`);
+  });
+  mqttClient.on("error", (error) => {
+    setBadge("error", "连接错误");
+    setConnectionMessage(`MQTT 连接错误：${error?.message || "未知错误"}；地址：${connectionUrl}`);
+  });
 
   return true;
 }
