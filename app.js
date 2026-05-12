@@ -139,10 +139,11 @@ function setBadge(state, text) {
 }
 
 function normalizeWsEndpoint(endpoint) {
-  return endpoint
-    .replace(/^wss?:\/\//i, "")
-    .replace(/^\/+/, "")
-    .replace(/\/+$/, "");
+  const trimmedEndpoint = endpoint.trim().replace(/\/+$/, "");
+  if (/^wss?:\/\//i.test(trimmedEndpoint)) {
+    return trimmedEndpoint.replace(/^WS/i, "ws");
+  }
+  return trimmedEndpoint.replace(/^\/+/, "");
 }
 
 function endpointHasPort(endpoint) {
@@ -176,6 +177,9 @@ function fillForm(settings) {
 
 function buildWsUrl(settings) {
   const endpoint = settings.wsEndpoint || settings.wsHost || settings.wssHost || "";
+  if (/^wss?:\/\//i.test(endpoint)) {
+    return endpoint;
+  }
   if (endpointHasPort(endpoint)) {
     return `ws://${endpoint}`;
   }
@@ -184,6 +188,9 @@ function buildWsUrl(settings) {
 
 function hasCompleteMqttSettings(settings) {
   const endpoint = settings?.wsEndpoint || settings?.wsHost || settings?.wssHost;
+  if (/^wss?:\/\//i.test(endpoint || "")) {
+    return Boolean(settings && endpoint && settings.subscribeTopic && settings.publishTopic);
+  }
   return Boolean(
     settings &&
     endpoint &&
@@ -606,7 +613,7 @@ mqttForm.addEventListener("submit", async (event) => {
 
   const settings = getFormData();
   if (!hasCompleteMqttSettings(settings)) {
-    formMessage.textContent = "请填写 WS 地址、订阅主题和发布主题；如果 WS 地址不含端口，请填写端口。";
+    formMessage.textContent = "请填写完整 WS/WSS 地址、订阅主题和发布主题。";
     return;
   }
 

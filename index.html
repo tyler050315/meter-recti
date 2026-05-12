@@ -48,13 +48,13 @@
 
       <form id="mqttForm" class="settings-form" autocomplete="on">
         <label>
-          <span>WS 地址</span>
-          <input id="wsEndpoint" name="wsEndpoint" type="text" inputmode="url" placeholder="47.112.12.175:8083/mqtt" required>
+          <span>WS/WSS 完整地址</span>
+          <input id="wsEndpoint" name="wsEndpoint" type="text" inputmode="url" placeholder="wss://47.112.12.175:8084/mqtt" required>
         </label>
 
         <label>
-          <span>端口（可选）</span>
-          <input id="port" name="port" type="number" inputmode="numeric" min="1" max="65535" placeholder="地址未含端口时填写">
+          <span>端口（兼容旧设置）</span>
+          <input id="port" name="port" type="number" inputmode="numeric" min="1" max="65535" placeholder="新地址可留空">
         </label>
 
         <label>
