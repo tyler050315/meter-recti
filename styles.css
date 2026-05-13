@@ -303,6 +303,7 @@ button:active {
 }
 
 .scanner-video,
+.html5-qr-reader,
 .scanner-placeholder {
   width: 100%;
   height: 100%;
@@ -311,6 +312,22 @@ button:active {
 .scanner-video {
   object-fit: cover;
   background: #101820;
+}
+
+.html5-qr-reader {
+  background: #101820;
+  color: var(--white);
+}
+
+.html5-qr-reader video {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover;
+}
+
+.html5-qr-reader div,
+.html5-qr-reader span {
+  box-shadow: none !important;
 }
 
 .scanner-placeholder {

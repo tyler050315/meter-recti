@@ -27,6 +27,7 @@ const serialNumberInput = document.querySelector("#serialNumber");
 const meterReadingInput = document.querySelector("#meterReading");
 const scanButton = document.querySelector("#scanButton");
 const scannerVideo = document.querySelector("#scannerVideo");
+const html5QrReader = document.querySelector("#html5QrReader");
 const scannerPlaceholder = document.querySelector("#scannerPlaceholder");
 const historyList = document.querySelector("#historyList");
 const historyMessage = document.querySelector("#historyMessage");
@@ -36,6 +37,7 @@ let currentSettings = null;
 let calibrationSession = null;
 let scannerStream = null;
 let scannerActive = false;
+let html5QrCode = null;
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -515,6 +517,19 @@ async function loadMqttLibrary() {
   });
 }
 
+async function loadHtml5QrcodeLibrary() {
+  if (window.Html5Qrcode) return true;
+
+  return new Promise((resolve) => {
+    const script = document.createElement("script");
+    script.src = "https://unpkg.com/html5-qrcode";
+    script.async = true;
+    script.onload = () => resolve(Boolean(window.Html5Qrcode));
+    script.onerror = () => resolve(false);
+    document.head.appendChild(script);
+  });
+}
+
 async function startScanner() {
   if (!window.isSecureContext) {
     calibrationMessage.textContent = "扫码需要 HTTPS 安全页面。手机访问普通 HTTP 地址时，iOS 浏览器会禁用摄像头。";
@@ -531,9 +546,7 @@ async function startScanner() {
   }
 
   if (!("BarcodeDetector" in window)) {
-    calibrationMessage.textContent = "当前浏览器不支持原生扫码，请先手动输入序列号。";
-    calibrationBadge.className = "badge error";
-    calibrationBadge.textContent = "不支持扫码";
+    await startHtml5QrcodeScanner();
     return;
   }
 
@@ -551,6 +564,7 @@ async function startScanner() {
 
   scannerVideo.srcObject = scannerStream;
   scannerVideo.classList.remove("hidden");
+  html5QrReader.classList.add("hidden");
   scannerPlaceholder.classList.add("hidden");
   await scannerVideo.play();
 
@@ -584,8 +598,60 @@ async function startScanner() {
   window.requestAnimationFrame(scanFrame);
 }
 
+async function startHtml5QrcodeScanner() {
+  const libraryReady = await loadHtml5QrcodeLibrary();
+  if (!libraryReady) {
+    calibrationMessage.textContent = "扫码库加载失败，请检查网络，或先手动输入序列号。";
+    calibrationBadge.className = "badge error";
+    calibrationBadge.textContent = "扫码库失败";
+    return;
+  }
+
+  scannerActive = true;
+  scanButton.textContent = "停止扫码";
+  scannerVideo.classList.add("hidden");
+  html5QrReader.classList.remove("hidden");
+  scannerPlaceholder.classList.add("hidden");
+  calibrationMessage.textContent = "正在启动兼容扫码...";
+  calibrationBadge.className = "badge";
+  calibrationBadge.textContent = "扫码中";
+
+  if (!html5QrCode) {
+    html5QrCode = new Html5Qrcode("html5QrReader");
+  }
+
+  try {
+    await html5QrCode.start(
+      { facingMode: "environment" },
+      { fps: 10, qrbox: { width: 240, height: 240 } },
+      (decodedText) => {
+        serialNumberInput.value = decodedText.trim();
+        stopScanner();
+        calibrationMessage.textContent = "扫码成功，序列号已填入。";
+        calibrationBadge.className = "badge connected";
+        calibrationBadge.textContent = "扫码成功";
+      },
+      () => {}
+    );
+    calibrationMessage.textContent = "正在扫码...";
+  } catch (error) {
+    scannerActive = false;
+    scanButton.textContent = "开始扫码";
+    html5QrReader.classList.add("hidden");
+    scannerPlaceholder.classList.remove("hidden");
+    calibrationMessage.textContent = `无法启动扫码：${error?.message || error || "未知错误"}。请检查摄像头权限。`;
+    calibrationBadge.className = "badge error";
+    calibrationBadge.textContent = "扫码失败";
+  }
+}
+
 function stopScanner() {
   scannerActive = false;
+
+  if (html5QrCode?.isScanning) {
+    html5QrCode.stop().catch(() => {});
+  }
+
   if (scannerStream) {
     scannerStream.getTracks().forEach((track) => track.stop());
     scannerStream = null;
@@ -593,6 +659,7 @@ function stopScanner() {
   scannerVideo.pause();
   scannerVideo.srcObject = null;
   scannerVideo.classList.add("hidden");
+  html5QrReader.classList.add("hidden");
   scannerPlaceholder.classList.remove("hidden");
   scanButton.textContent = "开始扫码";
 }
