@@ -3,6 +3,7 @@ const DB_VERSION = 2;
 const SETTINGS_STORE = "settings";
 const HISTORY_STORE = "history";
 const MQTT_SETTINGS_KEY = "mqtt";
+const NETWORK_NOTICE_KEY = "meter-recti-network-notice-v1";
 const SPLASH_DELAY_MS = 4500;
 const MAX_METER_READING = 999999999;
 const CALIBRATION_TIMEOUT_MS = 120000;
@@ -17,6 +18,7 @@ const SCAN_FORMATS = [
 ];
 const DEFAULT_SCAN_HINT = 0;
 
+const appShell = document.querySelector("#app");
 const splashView = document.querySelector("#splashView");
 const settingsView = document.querySelector("#settingsView");
 const calibrationView = document.querySelector("#calibrationView");
@@ -30,6 +32,11 @@ const goCalibrationButton = document.querySelector("#goCalibrationButton");
 const goSettingsButton = document.querySelector("#goSettingsButton");
 const goHistoryButton = document.querySelector("#goHistoryButton");
 const backCalibrationButton = document.querySelector("#backCalibrationButton");
+const exportHistoryButton = document.querySelector("#exportHistoryButton");
+const clearHistoryButton = document.querySelector("#clearHistoryButton");
+const tabSettingsButton = document.querySelector("#tabSettingsButton");
+const tabCalibrationButton = document.querySelector("#tabCalibrationButton");
+const tabHistoryButton = document.querySelector("#tabHistoryButton");
 const calibrationBadge = document.querySelector("#calibrationBadge");
 const calibrationForm = document.querySelector("#calibrationForm");
 const calibrationMessage = document.querySelector("#calibrationMessage");
@@ -121,26 +128,64 @@ async function readHistoryRecords() {
   });
 }
 
+async function deleteHistoryRecord(id) {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(HISTORY_STORE, "readwrite");
+    const store = transaction.objectStore(HISTORY_STORE);
+    const request = store.delete(id);
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+    transaction.oncomplete = () => db.close();
+  });
+}
+
+async function clearHistoryRecords() {
+  const db = await openDatabase();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(HISTORY_STORE, "readwrite");
+    const store = transaction.objectStore(HISTORY_STORE);
+    const request = store.clear();
+
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+    transaction.oncomplete = () => db.close();
+  });
+}
+
 function showSettings() {
+  appShell.classList.add("show-tabs");
   splashView.classList.add("hidden");
   calibrationView.classList.add("hidden");
   historyView.classList.add("hidden");
   settingsView.classList.remove("hidden");
+  setActiveTab(tabSettingsButton);
 }
 
 function showCalibration() {
+  appShell.classList.add("show-tabs");
   splashView.classList.add("hidden");
   settingsView.classList.add("hidden");
   historyView.classList.add("hidden");
   calibrationView.classList.remove("hidden");
+  setActiveTab(tabCalibrationButton);
 }
 
 async function showHistory() {
+  appShell.classList.add("show-tabs");
   splashView.classList.add("hidden");
   settingsView.classList.add("hidden");
   calibrationView.classList.add("hidden");
   historyView.classList.remove("hidden");
+  setActiveTab(tabHistoryButton);
   await renderHistory();
+}
+
+function setActiveTab(activeButton) {
+  [tabSettingsButton, tabCalibrationButton, tabHistoryButton].forEach((button) => {
+    button.classList.toggle("active", button === activeButton);
+  });
 }
 
 function setBadge(state, text) {
@@ -154,6 +199,18 @@ function setBadge(state, text) {
 function setConnectionMessage(text) {
   formMessage.textContent = text;
   calibrationMessage.textContent = text;
+}
+
+function showNetworkRequirementNotice() {
+  try {
+    if (localStorage.getItem(NETWORK_NOTICE_KEY)) return false;
+    localStorage.setItem(NETWORK_NOTICE_KEY, "1");
+  } catch {
+    return false;
+  }
+
+  splashStatus.textContent = "本工具需要联网连接 MQTT 服务，请保持网络可用。";
+  return true;
 }
 
 function normalizeWsEndpoint(endpoint) {
@@ -434,8 +491,106 @@ function createHistoryRow(record) {
   const calibratedAt = document.createElement("span");
   calibratedAt.textContent = record.calibratedAt || record.timestamp || "";
 
-  row.append(sn, meterSum, calibratedAt);
+  const actions = document.createElement("span");
+  actions.className = "history-actions";
+  const deleteButton = document.createElement("button");
+  deleteButton.className = "small-danger-button";
+  deleteButton.type = "button";
+  deleteButton.textContent = "删除";
+  deleteButton.addEventListener("click", async () => {
+    const label = record.sn ? `SN ${record.sn}` : "这条历史记录";
+    if (!window.confirm(`确定删除 ${label} 吗？此操作不能撤销。`)) return;
+
+    try {
+      await deleteHistoryRecord(record.id);
+      historyMessage.textContent = "历史记录已删除。";
+      await renderHistory();
+    } catch {
+      historyMessage.textContent = "删除历史记录失败。";
+    }
+  });
+  actions.append(deleteButton);
+
+  row.append(sn, meterSum, calibratedAt, actions);
   return row;
+}
+
+function csvCell(value) {
+  const text = String(value ?? "");
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
+function createHistoryCsv(records) {
+  const header = ["SN", "METERSUM", "校准时间", "ISO 时间", "原始数据"];
+  const rows = records.map((record) => [
+    record.sn || "",
+    record.meterSum || "",
+    record.calibratedAt || "",
+    record.timestamp || "",
+    record.raw ? JSON.stringify(record.raw) : "",
+  ]);
+
+  return [header, ...rows]
+    .map((row) => row.map(csvCell).join(","))
+    .join("\r\n");
+}
+
+async function exportHistory() {
+  try {
+    const records = await readHistoryRecords();
+    const sortedRecords = records.sort((a, b) => (b.id || 0) - (a.id || 0));
+    if (sortedRecords.length === 0) {
+      historyMessage.textContent = "暂无可导出的历史记录。";
+      return;
+    }
+
+    const csv = `\uFEFF${createHistoryCsv(sortedRecords)}`;
+    const fileName = `meter-recti-history-${new Date().toISOString().slice(0, 10)}.csv`;
+    const file = new File([csv], fileName, { type: "text/csv;charset=utf-8" });
+
+    if (navigator.canShare?.({ files: [file] })) {
+      await navigator.share({
+        files: [file],
+        title: "Meter Recti 历史记录",
+        text: "Meter Recti 校准历史记录 CSV",
+      });
+      historyMessage.textContent = "历史记录已打开分享面板。";
+      return;
+    }
+
+    const url = URL.createObjectURL(file);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    document.body.append(link);
+    link.click();
+    link.remove();
+    URL.revokeObjectURL(url);
+    historyMessage.textContent = "历史记录 CSV 已导出。";
+  } catch (error) {
+    if (error?.name === "AbortError") {
+      historyMessage.textContent = "已取消导出。";
+      return;
+    }
+    historyMessage.textContent = "导出历史记录失败。";
+  }
+}
+
+async function clearHistory() {
+  try {
+    const records = await readHistoryRecords();
+    if (records.length === 0) {
+      historyMessage.textContent = "暂无历史记录可清空。";
+      return;
+    }
+
+    if (!window.confirm(`确定清空全部 ${records.length} 条历史记录吗？此操作不能撤销。`)) return;
+    await clearHistoryRecords();
+    historyMessage.textContent = "历史记录已清空。";
+    await renderHistory();
+  } catch {
+    historyMessage.textContent = "清空历史记录失败。";
+  }
 }
 
 async function renderHistory() {
@@ -636,6 +791,7 @@ async function startScanner() {
   }
 
   scannerVideo.srcObject = scannerStream;
+  scannerVideo.closest(".scanner-panel")?.classList.add("scanner-live");
   scannerVideo.classList.remove("hidden");
   html5QrReader.classList.add("hidden");
   scannerPlaceholder.classList.add("hidden");
@@ -682,6 +838,7 @@ async function startHtml5QrcodeScanner() {
 
   scannerActive = true;
   scanButton.textContent = "停止扫码";
+  scannerVideo.closest(".scanner-panel")?.classList.add("scanner-live");
   scannerVideo.classList.add("hidden");
   html5QrReader.classList.remove("hidden");
   scannerPlaceholder.classList.add("hidden");
@@ -729,6 +886,7 @@ async function startHtml5QrcodeScanner() {
   } catch (error) {
     scannerActive = false;
     scanButton.textContent = "开始扫码";
+    scannerVideo.closest(".scanner-panel")?.classList.remove("scanner-live");
     html5QrReader.classList.add("hidden");
     scannerPlaceholder.classList.remove("hidden");
     calibrationMessage.textContent = `无法启动扫码：${error?.message || error || "未知错误"}。请检查摄像头权限。`;
@@ -750,6 +908,7 @@ function stopScanner() {
   }
   scannerVideo.pause();
   scannerVideo.srcObject = null;
+  scannerVideo.closest(".scanner-panel")?.classList.remove("scanner-live");
   scannerVideo.classList.add("hidden");
   html5QrReader.classList.add("hidden");
   scannerPlaceholder.classList.remove("hidden");
@@ -758,6 +917,7 @@ function stopScanner() {
 
 async function handleStartup() {
   let settings = null;
+  const networkNoticeShown = showNetworkRequirementNotice();
 
   try {
     settings = await readSetting(MQTT_SETTINGS_KEY);
@@ -772,6 +932,9 @@ async function handleStartup() {
   if (!hasCompleteMqttSettings(settings)) {
     splashStatus.textContent = "尚未配置 MQTT。";
     showSettings();
+    if (networkNoticeShown) {
+      formMessage.textContent = "本工具需要联网连接 MQTT 服务，请先确认 iPhone 网络可用。";
+    }
     return;
   }
 
@@ -820,6 +983,11 @@ goSettingsButton.addEventListener("click", showSettings);
 goCalibrationButton.addEventListener("click", showCalibration);
 goHistoryButton.addEventListener("click", showHistory);
 backCalibrationButton.addEventListener("click", showCalibration);
+exportHistoryButton.addEventListener("click", exportHistory);
+clearHistoryButton.addEventListener("click", clearHistory);
+tabSettingsButton.addEventListener("click", showSettings);
+tabCalibrationButton.addEventListener("click", showCalibration);
+tabHistoryButton.addEventListener("click", showHistory);
 
 calibrationForm.addEventListener("submit", (event) => {
   event.preventDefault();

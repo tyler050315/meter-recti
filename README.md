@@ -17,14 +17,14 @@ Serve the project from an HTTPS origin, then open it on iPhone Safari and add it
 
 ## Capacitor iOS
 
-This project also contains a Capacitor iOS shell. The web app remains the main UI; in a native Capacitor build, scanning uses `@capacitor/barcode-scanner`.
+This project also contains a Capacitor iOS shell. The web app remains the main UI; in a native Capacitor build, scanning uses the local `MeterRectiScanner` plugin first and keeps `@capacitor/barcode-scanner` only as a bundled fallback.
 
 Current native dependency set:
 
 - `@capacitor/core`, `@capacitor/ios`, `@capacitor/cli`: `7.6.5`
 - `@capacitor/barcode-scanner`: `2.2.6`
 
-The iOS app now includes a local `MeterRectiScanner` Capacitor plugin backed by `AVCaptureSession` and `AVCaptureMetadataOutput`. It is preferred over the packaged scanner for native iPhone builds and provides continuous autofocus/exposure, a restricted scan region, tap-to-focus, and 1x/1.5x/2x zoom controls.
+The iOS app now includes a local `MeterRectiScanner` Capacitor plugin backed by `AVCaptureSession` and `AVCaptureMetadataOutput`. It is preferred over the packaged scanner for native iPhone builds and provides continuous autofocus/exposure, a restricted scan region, tap-to-focus, torch control, success haptics, and 1x/1.5x/2x zoom controls.
 
 Prepare and sync the native project:
 

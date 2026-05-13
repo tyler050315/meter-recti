@@ -12,7 +12,7 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.svg">
-  <link rel="stylesheet" href="styles.css?v=20260513-scan2">
+  <link rel="stylesheet" href="styles.css?v=20260513-native2">
 </head>
 <body>
   <main id="app" class="app-shell">
@@ -46,44 +46,46 @@
         </div>
       </header>
 
-      <form id="mqttForm" class="settings-form" autocomplete="on">
-        <label>
-          <span>WS/WSS 完整地址</span>
-          <input id="wsEndpoint" name="wsEndpoint" type="text" inputmode="url" placeholder="wss://47.112.12.175:8084/mqtt" required>
-        </label>
+      <div class="view-content">
+        <form id="mqttForm" class="settings-form" autocomplete="on">
+          <label>
+            <span>WS/WSS 完整地址</span>
+            <input id="wsEndpoint" name="wsEndpoint" type="text" inputmode="url" placeholder="wss://47.112.12.175:8084/mqtt" required>
+          </label>
 
-        <label>
-          <span>端口（兼容旧设置）</span>
-          <input id="port" name="port" type="number" inputmode="numeric" min="1" max="65535" placeholder="新地址可留空">
-        </label>
+          <label>
+            <span>端口（兼容旧设置）</span>
+            <input id="port" name="port" type="number" inputmode="numeric" min="1" max="65535" placeholder="新地址可留空">
+          </label>
 
-        <label>
-          <span>账号</span>
-          <input id="username" name="username" type="text" placeholder="MQTT 用户名">
-        </label>
+          <label>
+            <span>账号</span>
+            <input id="username" name="username" type="text" placeholder="MQTT 用户名">
+          </label>
 
-        <label>
-          <span>密码</span>
-          <input id="password" name="password" type="password" placeholder="MQTT 密码">
-        </label>
+          <label>
+            <span>密码</span>
+            <input id="password" name="password" type="password" placeholder="MQTT 密码">
+          </label>
 
-        <label>
-          <span>订阅主题</span>
-          <input id="subscribeTopic" name="subscribeTopic" type="text" placeholder="meter/+/reply" required>
-        </label>
+          <label>
+            <span>订阅主题</span>
+            <input id="subscribeTopic" name="subscribeTopic" type="text" placeholder="meter/+/reply" required>
+          </label>
 
-        <label>
-          <span>发布主题</span>
-          <input id="publishTopic" name="publishTopic" type="text" placeholder="meter/001/cmd" required>
-        </label>
+          <label>
+            <span>发布主题</span>
+            <input id="publishTopic" name="publishTopic" type="text" placeholder="meter/001/cmd" required>
+          </label>
 
-        <div class="form-actions">
-          <button type="submit">保存并连接</button>
-          <button id="disconnectButton" class="secondary-button" type="button">断开连接</button>
-        </div>
-      </form>
+          <div class="form-actions">
+            <button type="submit">保存并连接</button>
+            <button id="disconnectButton" class="secondary-button" type="button">断开连接</button>
+          </div>
+        </form>
 
-      <p id="formMessage" class="form-message" role="status"></p>
+        <p id="formMessage" class="form-message" role="status"></p>
+      </div>
     </section>
 
     <section id="calibrationView" class="view calibration-view hidden" aria-label="扫码校准页">
@@ -99,46 +101,48 @@
         </div>
       </header>
 
-      <section class="scanner-panel">
-        <video id="scannerVideo" class="scanner-video hidden" playsinline muted></video>
-        <div id="html5QrReader" class="html5-qr-reader hidden"></div>
-        <div id="scannerPlaceholder" class="scanner-placeholder">
-          <div class="scanner-frame" aria-hidden="true"></div>
-          <p>扫码区域</p>
-        </div>
-      </section>
+      <div class="view-content">
+        <section class="scanner-panel">
+          <video id="scannerVideo" class="scanner-video hidden" playsinline muted></video>
+          <div id="html5QrReader" class="html5-qr-reader hidden"></div>
+          <div id="scannerPlaceholder" class="scanner-placeholder">
+            <div class="scanner-frame" aria-hidden="true"></div>
+            <p>全屏扫码</p>
+          </div>
+        </section>
 
-      <form id="calibrationForm" class="calibration-form">
-        <label class="scan-mode-field">
-          <span>Scan type</span>
-          <select id="scanMode" name="scanMode">
-            <option value="0" selected>QR code</option>
-            <option value="5">Code 128 barcode</option>
-            <option value="3">Code 39 barcode</option>
-            <option value="9">EAN-13 / UPC-A</option>
-            <option value="10">EAN-8</option>
-            <option value="8">ITF</option>
-            <option value="17">All formats</option>
-          </select>
-        </label>
+        <form id="calibrationForm" class="calibration-form">
+          <label class="scan-mode-field">
+            <span>Scan type</span>
+            <select id="scanMode" name="scanMode">
+              <option value="0" selected>QR code</option>
+              <option value="5">Code 128 barcode</option>
+              <option value="3">Code 39 barcode</option>
+              <option value="9">EAN-13 / UPC-A</option>
+              <option value="10">EAN-8</option>
+              <option value="8">ITF</option>
+              <option value="17">All formats</option>
+            </select>
+          </label>
 
-        <label>
-          <span>序列号</span>
-          <input id="serialNumber" name="serialNumber" type="text" inputmode="numeric" placeholder="扫描或手动输入" required>
-        </label>
+          <label>
+            <span>序列号</span>
+            <input id="serialNumber" name="serialNumber" type="text" inputmode="numeric" placeholder="扫描或手动输入" required>
+          </label>
 
-        <label>
-          <span>表盘读数</span>
-          <input id="meterReading" name="meterReading" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0 - 999999999" required>
-        </label>
+          <label>
+            <span>表盘读数</span>
+            <input id="meterReading" name="meterReading" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="9" placeholder="0 - 999999999" required>
+          </label>
 
-        <div class="form-actions">
-          <button id="scanButton" class="secondary-button" type="button">开始扫码</button>
-          <button type="submit">校准</button>
-        </div>
-      </form>
+          <div class="form-actions">
+            <button id="scanButton" class="secondary-button" type="button">开始扫码</button>
+            <button type="submit">校准</button>
+          </div>
+        </form>
 
-      <p id="calibrationMessage" class="form-message" role="status"></p>
+        <p id="calibrationMessage" class="form-message" role="status"></p>
+      </div>
     </section>
 
     <section id="historyView" class="view history-view hidden" aria-label="历史记录页">
@@ -148,24 +152,44 @@
           <h2>历史记录</h2>
         </div>
         <div class="header-actions">
+          <button id="exportHistoryButton" class="icon-text-button" type="button">导出</button>
+          <button id="clearHistoryButton" class="icon-text-button danger-button" type="button">清空</button>
           <button id="backCalibrationButton" class="icon-text-button" type="button">校准页</button>
         </div>
       </header>
 
-      <section class="history-panel">
-        <div class="history-table-head">
-          <span>SN</span>
-          <span>METERSUM</span>
-          <span>校准时间</span>
-        </div>
-        <div id="historyList" class="history-list"></div>
-      </section>
+      <div class="view-content">
+        <section class="history-panel">
+          <div class="history-table-head">
+            <span>SN</span>
+            <span>METERSUM</span>
+            <span>校准时间</span>
+            <span>操作</span>
+          </div>
+          <div id="historyList" class="history-list"></div>
+        </section>
 
-      <p id="historyMessage" class="form-message" role="status"></p>
+        <p id="historyMessage" class="form-message" role="status"></p>
+      </div>
     </section>
+
+    <nav id="tabBar" class="tab-bar" aria-label="底部导航">
+      <button id="tabSettingsButton" class="tab-button" type="button">
+        <span class="tab-icon tab-icon-settings" aria-hidden="true"></span>
+        <span>MQTT</span>
+      </button>
+      <button id="tabCalibrationButton" class="tab-button" type="button">
+        <span class="tab-icon tab-icon-calibration" aria-hidden="true"></span>
+        <span>校准</span>
+      </button>
+      <button id="tabHistoryButton" class="tab-button" type="button">
+        <span class="tab-icon tab-icon-history" aria-hidden="true"></span>
+        <span>历史</span>
+      </button>
+    </nav>
   </main>
 
   <script src="native-scanner.js?v=20260513-cap1" defer></script>
-  <script src="app.js?v=20260513-cap1" defer></script>
+  <script src="app.js?v=20260513-native2" defer></script>
 </body>
 </html>

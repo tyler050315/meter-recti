@@ -1,10 +1,10 @@
-const CACHE_NAME = "meter-recti-v6";
+const CACHE_NAME = "meter-recti-v7";
 const APP_SHELL = [
   "./",
   "./index.html",
-  "./styles.css?v=20260513-scan2",
+  "./styles.css?v=20260513-native2",
   "./native-scanner.js?v=20260513-cap1",
-  "./app.js?v=20260513-cap1",
+  "./app.js?v=20260513-native2",
   "./manifest.json",
   "./icons/icon.svg",
   "./icons/maskable-icon.svg",

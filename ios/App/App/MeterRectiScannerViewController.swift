@@ -18,6 +18,7 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
     private let scanFrameView = UIView()
     private let instructionsLabel = UILabel()
     private let zoomStack = UIStackView()
+    private let torchButton = UIButton(type: .system)
 
     init(hint: Int, initialZoom: CGFloat) {
         self.hint = hint
@@ -49,6 +50,7 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
 
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
+        setTorch(false)
         sessionQueue.async { [weak self] in
             if self?.session.isRunning == true {
                 self?.session.stopRunning()
@@ -100,6 +102,17 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
         cancelButton.addTarget(self, action: #selector(cancelTapped), for: .touchUpInside)
         view.addSubview(cancelButton)
 
+        torchButton.translatesAutoresizingMaskIntoConstraints = false
+        torchButton.setTitle("Light", for: .normal)
+        torchButton.setTitleColor(.white, for: .normal)
+        torchButton.titleLabel?.font = .systemFont(ofSize: 17, weight: .semibold)
+        torchButton.backgroundColor = UIColor.black.withAlphaComponent(0.42)
+        torchButton.layer.cornerRadius = 18
+        torchButton.contentEdgeInsets = UIEdgeInsets(top: 8, left: 16, bottom: 8, right: 16)
+        torchButton.addTarget(self, action: #selector(torchTapped), for: .touchUpInside)
+        torchButton.isHidden = true
+        view.addSubview(torchButton)
+
         zoomStack.translatesAutoresizingMaskIntoConstraints = false
         zoomStack.axis = .horizontal
         zoomStack.alignment = .center
@@ -121,6 +134,8 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
         NSLayoutConstraint.activate([
             cancelButton.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor, constant: 18),
             cancelButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
+            torchButton.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor, constant: -18),
+            torchButton.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 12),
             instructionsLabel.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: 24),
             instructionsLabel.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -24),
             instructionsLabel.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 82),
@@ -155,6 +170,9 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
                 return
             }
             self.captureDevice = device
+            DispatchQueue.main.async { [weak self] in
+                self?.torchButton.isHidden = !device.hasTorch
+            }
 
             do {
                 let input = try AVCaptureDeviceInput(device: device)
@@ -266,6 +284,8 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
               let value = object.stringValue,
               !value.isEmpty else { return }
         hasFinished = true
+        UINotificationFeedbackGenerator().notificationOccurred(.success)
+        setTorch(false)
         sessionQueue.async { [weak self] in
             self?.session.stopRunning()
         }
@@ -277,6 +297,7 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
     @objc private func cancelTapped() {
         guard !hasFinished else { return }
         hasFinished = true
+        setTorch(false)
         dismiss(animated: true) { [weak self] in
             self?.onCancel?()
         }
@@ -284,6 +305,11 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
 
     @objc private func zoomTapped(_ sender: UIButton) {
         applyZoom(CGFloat(sender.tag) / 10.0)
+    }
+
+    @objc private func torchTapped() {
+        guard let device = captureDevice, device.hasTorch else { return }
+        setTorch(device.torchMode != .on)
     }
 
     @objc private func focusTapped(_ gesture: UITapGestureRecognizer) {
@@ -312,9 +338,23 @@ final class MeterRectiScannerViewController: UIViewController, AVCaptureMetadata
     private func fail(_ message: String) {
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
+            self.setTorch(false)
             self.dismiss(animated: true) {
                 self.onError?(message)
             }
+        }
+    }
+
+    private func setTorch(_ enabled: Bool) {
+        guard let device = captureDevice, device.hasTorch else { return }
+        do {
+            try device.lockForConfiguration()
+            defer { device.unlockForConfiguration() }
+            device.torchMode = enabled ? .on : .off
+            torchButton.setTitle(enabled ? "Light On" : "Light", for: .normal)
+            torchButton.backgroundColor = enabled ? UIColor.systemYellow.withAlphaComponent(0.82) : UIColor.black.withAlphaComponent(0.42)
+            torchButton.setTitleColor(enabled ? .black : .white, for: .normal)
+        } catch {
         }
     }
 }

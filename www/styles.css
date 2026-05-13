@@ -20,10 +20,15 @@
 html,
 body {
   margin: 0;
-  min-height: 100%;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Microsoft YaHei", sans-serif;
   background: var(--blue-900);
   color: var(--white);
+  position: fixed;
+  inset: 0;
 }
 
 button,
@@ -34,15 +39,37 @@ textarea {
 }
 
 .app-shell {
-  min-height: 100vh;
-  min-height: 100svh;
+  width: 100%;
+  height: 100vh;
+  height: 100svh;
+  height: 100dvh;
   overflow: hidden;
 }
 
 .view {
-  min-height: 100vh;
-  min-height: 100svh;
-  padding: max(28px, env(safe-area-inset-top)) 22px max(26px, env(safe-area-inset-bottom));
+  height: 100%;
+  padding: max(28px, env(safe-area-inset-top)) 22px max(26px, calc(env(safe-area-inset-bottom) + 84px));
+  overflow: hidden;
+}
+
+.splash-view {
+  padding-bottom: max(26px, env(safe-area-inset-bottom));
+}
+
+.settings-view,
+.calibration-view,
+.history-view {
+  display: flex;
+  flex-direction: column;
+}
+
+.view-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding-bottom: 10px;
 }
 
 .splash-view {
@@ -53,6 +80,111 @@ textarea {
   background:
     radial-gradient(circle at 50% 18%, rgba(122, 166, 194, 0.28), transparent 30%),
     linear-gradient(160deg, #233449 0%, #405b70 52%, #7f919d 100%);
+}
+
+.tab-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  display: none;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0;
+  min-height: 70px;
+  padding: 8px 14px max(8px, env(safe-area-inset-bottom));
+  border-top: 1px solid rgba(49, 75, 99, 0.16);
+  background: rgba(246, 248, 250, 0.96);
+  box-shadow: 0 -8px 24px rgba(19, 35, 50, 0.08);
+}
+
+.app-shell.show-tabs .tab-bar {
+  display: grid;
+}
+
+.tab-button {
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+  min-height: 52px;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--gray-700);
+  box-shadow: none;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.tab-button.active {
+  color: var(--blue-700);
+}
+
+.tab-icon {
+  position: relative;
+  width: 26px;
+  height: 26px;
+}
+
+.tab-icon-calibration::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 3px solid currentColor;
+  border-radius: 50%;
+}
+
+.tab-icon-calibration::after {
+  content: "";
+  position: absolute;
+  left: 12px;
+  top: 7px;
+  width: 3px;
+  height: 11px;
+  border-radius: 999px;
+  background: currentColor;
+  transform: rotate(38deg);
+  transform-origin: bottom center;
+}
+
+.tab-icon-settings::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border: 3px solid currentColor;
+  border-radius: 6px;
+}
+
+.tab-icon-settings::after {
+  content: "";
+  position: absolute;
+  left: 8px;
+  top: 8px;
+  width: 10px;
+  height: 10px;
+  border: 2px solid currentColor;
+  border-radius: 50%;
+}
+
+.tab-icon-history::before,
+.tab-icon-history::after {
+  content: "";
+  position: absolute;
+  left: 4px;
+  right: 4px;
+  height: 3px;
+  border-radius: 999px;
+  background: currentColor;
+  box-shadow: 0 8px 0 currentColor;
+}
+
+.tab-icon-history::before {
+  top: 6px;
+}
+
+.tab-icon-history::after {
+  top: 22px;
+  box-shadow: none;
 }
 
 .brand-mark {
@@ -184,6 +316,7 @@ h2 {
 }
 
 .page-header {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -201,6 +334,8 @@ h2 {
 .header-actions {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
@@ -212,6 +347,11 @@ h2 {
   color: var(--blue-700);
   box-shadow: none;
   font-size: 13px;
+}
+
+.danger-button {
+  background: rgba(198, 81, 74, 0.12);
+  color: var(--red);
 }
 
 .badge {
@@ -303,12 +443,17 @@ button:active {
 .scanner-panel {
   position: relative;
   max-width: 680px;
-  aspect-ratio: 16 / 10;
-  margin: 0 auto 18px;
+  min-height: 86px;
+  margin: 0 auto 16px;
   overflow: hidden;
   border: 1px solid rgba(49, 75, 99, 0.18);
   border-radius: 8px;
   background: linear-gradient(145deg, rgba(49, 75, 99, 0.14), rgba(255, 255, 255, 0.76));
+}
+
+.scanner-panel.scanner-live {
+  aspect-ratio: 16 / 10;
+  min-height: 0;
 }
 
 .scanner-video,
@@ -343,16 +488,24 @@ button:active {
   display: grid;
   place-items: center;
   align-content: center;
-  gap: 14px;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  padding: 14px 16px;
   color: var(--gray-700);
+  text-align: left;
 }
 
 .scanner-frame {
-  width: min(48vw, 220px);
+  width: 48px;
   aspect-ratio: 1;
-  border: 3px solid rgba(49, 75, 99, 0.52);
+  border: 2px solid rgba(49, 75, 99, 0.52);
   border-radius: 8px;
-  box-shadow: inset 0 0 0 8px rgba(255, 255, 255, 0.42);
+  box-shadow: inset 0 0 0 5px rgba(255, 255, 255, 0.42);
+}
+
+.scanner-placeholder p {
+  margin: 0;
+  font-weight: 700;
 }
 
 .history-panel {
@@ -367,7 +520,7 @@ button:active {
 .history-table-head,
 .history-row {
   display: grid;
-  grid-template-columns: 1.1fr 1fr 1.2fr;
+  grid-template-columns: 1.1fr 1fr 1.2fr 76px;
   gap: 10px;
   align-items: center;
 }
@@ -394,6 +547,21 @@ button:active {
 .history-row span {
   min-width: 0;
   overflow-wrap: anywhere;
+}
+
+.history-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.small-danger-button {
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: rgba(198, 81, 74, 0.12);
+  color: var(--red);
+  box-shadow: none;
+  font-size: 13px;
 }
 
 .empty-history {
@@ -481,5 +649,13 @@ button:active {
 
   .history-row span:nth-child(3)::before {
     content: "校准时间";
+  }
+
+  .history-row span:nth-child(4)::before {
+    content: "操作";
+  }
+
+  .history-actions {
+    justify-content: flex-start;
   }
 }
