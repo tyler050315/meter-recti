@@ -10,12 +10,12 @@
     "open:ios": "cap open ios"
   },
   "dependencies": {
-    "@capacitor/barcode-scanner": "^2.0.3",
-    "@capacitor/core": "^7.0.0",
-    "@capacitor/ios": "^7.0.0"
+    "@capacitor/barcode-scanner": "2.2.6",
+    "@capacitor/core": "7.6.5",
+    "@capacitor/ios": "7.6.5"
   },
   "devDependencies": {
-    "@capacitor/cli": "^7.0.0",
-    "esbuild": "^0.25.0"
+    "@capacitor/cli": "7.6.5",
+    "esbuild": "0.25.12"
   }
 }
