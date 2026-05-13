@@ -6,6 +6,15 @@ const MQTT_SETTINGS_KEY = "mqtt";
 const SPLASH_DELAY_MS = 4500;
 const MAX_METER_READING = 999999999;
 const CALIBRATION_TIMEOUT_MS = 120000;
+const SCAN_FORMATS = [
+  "QR_CODE",
+  "CODE_128",
+  "CODE_39",
+  "EAN_13",
+  "EAN_8",
+  "ITF",
+  "CODABAR",
+];
 
 const splashView = document.querySelector("#splashView");
 const settingsView = document.querySelector("#settingsView");
@@ -620,10 +629,24 @@ async function startHtml5QrcodeScanner() {
     html5QrCode = new Html5Qrcode("html5QrReader");
   }
 
+  const qrboxSize = Math.min(
+    Math.floor(Math.min(window.innerWidth, window.innerHeight) * 0.78),
+    380
+  );
+  const supportedFormats = SCAN_FORMATS
+    .map((format) => window.Html5QrcodeSupportedFormats?.[format])
+    .filter((format) => format !== undefined);
+
   try {
     await html5QrCode.start(
       { facingMode: "environment" },
-      { fps: 10, qrbox: { width: 240, height: 240 } },
+      {
+        fps: 18,
+        qrbox: { width: qrboxSize, height: qrboxSize },
+        aspectRatio: 1,
+        formatsToSupport: supportedFormats.length ? supportedFormats : undefined,
+        disableFlip: true,
+      },
       (decodedText) => {
         serialNumberInput.value = decodedText.trim();
         stopScanner();

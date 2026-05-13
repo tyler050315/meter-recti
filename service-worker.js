@@ -1,4 +1,4 @@
-const CACHE_NAME = "meter-recti-v3";
+const CACHE_NAME = "meter-recti-v4";
 const APP_SHELL = [
   "./",
   "./index.html",
