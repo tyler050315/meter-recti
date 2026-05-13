@@ -1,0 +1,21 @@
+{
+  "name": "meter-recti",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Water meter calibration PWA and Capacitor app.",
+  "scripts": {
+    "build:native-scanner": "node scripts/build-native-scanner.mjs",
+    "prepare:www": "powershell -ExecutionPolicy Bypass -File scripts/prepare-www.ps1",
+    "sync:ios": "cap sync ios",
+    "open:ios": "cap open ios"
+  },
+  "dependencies": {
+    "@capacitor/barcode-scanner": "^2.0.3",
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0",
+    "esbuild": "^0.25.0"
+  }
+}
