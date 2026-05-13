@@ -547,7 +547,7 @@ function isNativeCapacitorApp() {
 
 function getNativeBarcodeScanner() {
   const plugins = window.Capacitor?.Plugins || {};
-  return window.NativeBarcodeScanner || plugins.CapacitorBarcodeScanner || plugins.BarcodeScanner || null;
+  return window.MeterRectiScanner || window.NativeBarcodeScanner || plugins.MeterRectiScanner || plugins.CapacitorBarcodeScanner || plugins.BarcodeScanner || null;
 }
 
 function getSelectedScanHint() {
@@ -571,6 +571,7 @@ async function startNativeBarcodeScanner() {
   try {
     const result = await scanner.scanBarcode({
       hint: getSelectedScanHint(),
+      zoom: 1.5,
       cameraDirection: 1,
       scanOrientation: 3,
       scanInstructions: "请将二维码或条形码置于取景框内",

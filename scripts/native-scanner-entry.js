@@ -1,3 +1,8 @@
+import { registerPlugin } from "@capacitor/core";
 import { CapacitorBarcodeScanner } from "@capacitor/barcode-scanner";
 
-window.NativeBarcodeScanner = CapacitorBarcodeScanner;
+const MeterRectiScanner = registerPlugin("MeterRectiScanner");
+
+window.MeterRectiScanner = MeterRectiScanner;
+window.NativeBarcodeScanner = MeterRectiScanner;
+window.CapacitorBarcodeScannerFallback = CapacitorBarcodeScanner;

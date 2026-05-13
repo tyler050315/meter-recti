@@ -27,7 +27,9 @@ body {
 }
 
 button,
-input {
+input,
+select,
+textarea {
   font: inherit;
 }
 
@@ -257,6 +259,7 @@ select {
   padding: 12px 14px;
   background: rgba(255, 255, 255, 0.86);
   color: var(--blue-900);
+  font-size: 16px;
   outline: none;
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.75);
 }
