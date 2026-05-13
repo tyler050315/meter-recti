@@ -1,0 +1,30 @@
+workflows:
+  ios-unsigned-check:
+    name: iOS unsigned build check
+    instance_type: mac_mini_m2
+    max_build_duration: 60
+    environment:
+      node: latest
+      xcode: latest
+    scripts:
+      - name: Install dependencies
+        script: npm ci
+      - name: Build native scanner bridge
+        script: npm run build:native-scanner
+      - name: Prepare Capacitor web assets
+        script: npm run prepare:www
+      - name: Sync Capacitor iOS project
+        script: npx cap sync ios
+      - name: Build iOS simulator app without signing
+        script: |
+          cd ios/App
+          xcodebuild \
+            -project App.xcodeproj \
+            -scheme App \
+            -configuration Debug \
+            -sdk iphonesimulator \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            build
+    artifacts:
+      - ios/App/build/Build/Products/**/*.app

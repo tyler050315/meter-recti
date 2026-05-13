@@ -5,7 +5,7 @@
   "description": "Water meter calibration PWA and Capacitor app.",
   "scripts": {
     "build:native-scanner": "node scripts/build-native-scanner.mjs",
-    "prepare:www": "powershell -ExecutionPolicy Bypass -File scripts/prepare-www.ps1",
+    "prepare:www": "node scripts/prepare-www.mjs",
     "sync:ios": "cap sync ios",
     "open:ios": "cap open ios"
   },
