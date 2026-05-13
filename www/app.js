@@ -15,6 +15,7 @@ const SCAN_FORMATS = [
   "ITF",
   "CODABAR",
 ];
+const DEFAULT_SCAN_HINT = 0;
 
 const splashView = document.querySelector("#splashView");
 const settingsView = document.querySelector("#settingsView");
@@ -35,6 +36,7 @@ const calibrationMessage = document.querySelector("#calibrationMessage");
 const serialNumberInput = document.querySelector("#serialNumber");
 const meterReadingInput = document.querySelector("#meterReading");
 const scanButton = document.querySelector("#scanButton");
+const scanModeSelect = document.querySelector("#scanMode");
 const scannerVideo = document.querySelector("#scannerVideo");
 const html5QrReader = document.querySelector("#html5QrReader");
 const scannerPlaceholder = document.querySelector("#scannerPlaceholder");
@@ -548,6 +550,11 @@ function getNativeBarcodeScanner() {
   return window.NativeBarcodeScanner || plugins.CapacitorBarcodeScanner || plugins.BarcodeScanner || null;
 }
 
+function getSelectedScanHint() {
+  const hint = Number(scanModeSelect?.value);
+  return Number.isFinite(hint) ? hint : DEFAULT_SCAN_HINT;
+}
+
 async function startNativeBarcodeScanner() {
   const scanner = getNativeBarcodeScanner();
   if (!scanner?.scanBarcode) {
@@ -563,11 +570,11 @@ async function startNativeBarcodeScanner() {
 
   try {
     const result = await scanner.scanBarcode({
-      hint: 17,
+      hint: getSelectedScanHint(),
       cameraDirection: 1,
-      scanOrientation: 1,
+      scanOrientation: 3,
       scanInstructions: "请将二维码或条形码置于取景框内",
-      scanButton: true,
+      scanButton: false,
       scanText: "取消",
     });
     const scannedText = String(result?.ScanResult || "").trim();
@@ -692,6 +699,11 @@ async function startHtml5QrcodeScanner() {
   const supportedFormats = SCAN_FORMATS
     .map((format) => window.Html5QrcodeSupportedFormats?.[format])
     .filter((format) => format !== undefined);
+  const selectedHint = getSelectedScanHint();
+  const selectedFormats =
+    selectedHint === 17
+      ? supportedFormats
+      : supportedFormats.filter((format) => format === selectedHint);
 
   try {
     await html5QrCode.start(
@@ -700,7 +712,7 @@ async function startHtml5QrcodeScanner() {
         fps: 18,
         qrbox: { width: qrboxSize, height: qrboxSize },
         aspectRatio: 1,
-        formatsToSupport: supportedFormats.length ? supportedFormats : undefined,
+        formatsToSupport: selectedFormats.length ? selectedFormats : undefined,
         disableFlip: true,
       },
       (decodedText) => {

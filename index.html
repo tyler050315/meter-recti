@@ -109,6 +109,19 @@
       </section>
 
       <form id="calibrationForm" class="calibration-form">
+        <label class="scan-mode-field">
+          <span>Scan type</span>
+          <select id="scanMode" name="scanMode">
+            <option value="0" selected>QR code</option>
+            <option value="5">Code 128 barcode</option>
+            <option value="3">Code 39 barcode</option>
+            <option value="9">EAN-13 / UPC-A</option>
+            <option value="10">EAN-8</option>
+            <option value="8">ITF</option>
+            <option value="17">All formats</option>
+          </select>
+        </label>
+
         <label>
           <span>序列号</span>
           <input id="serialNumber" name="serialNumber" type="text" inputmode="numeric" placeholder="扫描或手动输入" required>
